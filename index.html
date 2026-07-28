@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surprise Reveal 🎁</title>
+    <!-- Confetti Fireworks Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #0d0d11;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .page {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            animation: fade .6s ease-in-out;
+            position: relative;
+            z-index: 5;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .active {
+            display: flex;
+        }
+
+        @keyframes fade {
+            from { opacity: 0; transform: scale(.92); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 12px rgba(255, 77, 109, 0.6);
+        }
+
+        p {
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+
+        input {
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 25px;
+            border: 2px solid #ff4d6d;
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
+            outline: none;
+            margin-bottom: 15px;
+            width: 85%;
+            box-shadow: 0 0 10px rgba(255, 77, 109, 0.2);
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            margin: 10px;
+            cursor: pointer;
+            background: #ff4d6d;
+            color: white;
+            transition: .2s ease-in-out;
+            box-shadow: 0 5px 15px rgba(255,77,109,0.3);
+            z-index: 20;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .gift-container {
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            z-index: 9999;
+            touch-action: manipulation;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 30px;
+            border: 2px dashed rgba(255, 77, 109, 0.4);
+            margin-bottom: 20px;
+        }
+
+        #gift {
+            font-size: 110px;
+            animation: bounce 1s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes bounce {
+            50% { transform: translateY(-15px); }
+        }
+
+        /* Fixed No Button */
+        #no {
+            position: absolute;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            background: #444;
+            color: #aaa;
+            z-index: 99;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            touch-action: manipulation;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 100%;
+            position: relative;
+            z-index: 20;
+            height: 120px;
+        }
+
+        .error-msg {
+            color: #ff4d4d;
+            font-size: 14px;
+            margin-top: -5px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        /* MEMORY GAME STYLES */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 70px);
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+
+        .card {
+            width: 70px;
+            height: 70px;
+            background: #1a1a1a;
+            border: 2px solid #ff4d6d;
+            border-radius: 12px;
+            font-size: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 0 10px rgba(255, 77, 109, 0.3);
+            transition: transform 0.2s, background-color 0.3s;
+        }
+
+        .card.matched {
+            border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+            cursor: default;
+        }
+
+        .timer-box {
+            font-size: 13px;
+            color: #ff4d6d;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: #1a1a1a;
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid #ff4d6d;
+        }
+
+        /* STAGE 5: PHOTO STAGE ONLY */
+        .photo-card {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-card img {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 20px;
+            box-shadow: 0 0 35px rgba(255, 77, 109, 0.7);
+            border: 3px solid #ff4d6d;
+            object-fit: cover;
+        }
+
+        /* STAGE 6: DECORATIVE WISHES STAGE */
+        .wish-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 25px;
+            padding: 30px 20px;
+            box-shadow: 0 0 30px rgba(255, 77, 109, 0.3);
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .wish-title {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #ff4d6d, #ffb703, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(255,77,109,0.8)); }
+            50% { filter: drop-shadow(0 0 20px rgba(0,255,136,0.8)); }
+        }
+
+        .wish-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #f1f1f1;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .tag-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff4d6d, #7209b7);
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Music Elements (Removed 'loop' so 0.5s JS gap works properly) -->
+    <audio id="bgMusic" src="song.mp3" preload="auto"></audio>
+    <audio id="bgMusic1" src="song1.mp3" preload="auto"></audio>
+
+    <!-- Page 1 (Tap to Open) -->
+    <div id="p1" class="page active">
+        <div class="gift-container" id="giftBox" onclick="openGift()">
+            <div id="gift">🎁</div>
+        </div>
+        <h1 style="color: #ff4d6d;">Tap the Gift Box! 👆</h1>
+    </div>
+
+    <!-- Page 2 (Stage 1: DOB Lock) -->
+    <div id="p2" class="page">
+        <h1>Stage 1: DOB Lock 🔒</h1>
+        <p>Apni Date of Birth daal (e.g. DDMMYYYY):</p>
+        <input type="text" id="passInput" placeholder="Enter DOB...">
+        <div id="errMsg1" class="error-msg">❌ Galat DOB! Sahi date daal... 😂</div>
+        <button onclick="checkStage1Password()">Unlock Game 🔓</button>
+    </div>
+
+    <!-- Page 3 (Stage 2: Memory Game) -->
+    <div id="p3" class="page">
+        <h1>Stage 2: Memory Game 🧠</h1>
+        <p>Card khulte hi band ho jayega! Same pairs dhoond 🎯</p>
+        <div class="timer-box" id="timerText">⏳ Reshuffle in: 5s</div>
+        <div class="game-grid" id="gameGrid"></div>
+        <button id="nextMemoryGame" style="display:none;" onclick="next(4)">Next Level ➜</button>
+    </div>
+
+    <!-- Page 4 (Stage 3: Memory Test Question) -->
+    <div id="p4" class="page">
+        <h1>Stage 3: Memory Test 📍</h1>
+        <p>Bata hum dono **pehli baar kahan mile the**? 🤔</p>
+        <input type="text" id="meetInput" placeholder="Type answer here...">
+        <div id="errMsg2" class="error-msg">❌ Galat answer! Soch ke type kar 😉</div>
+        <button onclick="checkMeetPassword()">Submit Answer 🔓</button>
+    </div>
+
+    <!-- Page 5 (Stage 4: Fun Questions) -->
+    <div id="p5" class="page">
+        <h1 id="qTitle">Question 1 😂</h1>
+        <p id="qText">Will you continue?</p>
+        <div class="button-container">
+            <button id="yesBtn">Yes 😎</button>
+            <button id="no">No 😏</button>
+        </div>
+    </div>
+
+    <!-- Page 6 (Stage 5: ONLY PHOTO REVEAL) -->
+    <div id="p6" class="page">
+        <div class="photo-card">
+            <img src="photo.jpg" alt="Memory Photo">
+            <button style="margin-top:25px;" onclick="next(7)">See Special Message ✨ ➜</button>
+        </div>
+    </div>
+
+    <!-- Page 7 (Stage 6: DECORATIVE WISHES) -->
+    <div id="p7" class="page">
+        <div class="wish-container">
+            <div class="wish-title">🎓 BEST OF LUCK! 🎓</div>
+            <p class="wish-text">
+                <b>Sakcham Bhai!</b><br><br>
+                College life is starting, make every moment count! Naye dost banao, nayi yaadein buno, aur hamesha aise hi energetic raho. 🔥✨
+            </p>
+            <div class="tag-badge">🚀 COLLEGE LIFE ENJOY KARNA! 🚀</div>
+        </div>
+    </div>
+
+    <script>
+        const audio = document.getElementById("bgMusic");
+        const audio1 = document.getElementById("bgMusic1");
+
+        // --- Custom Gap Setup for Audio (0.5s Delay) ---
+        function setupAudioLoopWithGap(audioElement, delayMs) {
+            audioElement.addEventListener('ended', function() {
+                setTimeout(() => {
+                    audioElement.currentTime = 0;
+                    audioElement.play().catch(e => {});
+                }, delayMs);
+            });
+        }
+
+        // Apply 500ms (0.5s) gap to both songs
+        setupAudioLoopWithGap(audio, 500);
+        setupAudioLoopWithGap(audio1, 500);
+
+        function openGift() {
+            if (audio) {
+                audio.play().catch(e => console.log("Audio play skipped/failed:", e));
+            }
+            next(2);
+        }
+
+        function next(n) {
+            document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+            document.getElementById("p" + n).classList.add("active");
+
+            // Switch to song1.mp3 at Stage 6 (Photo Reveal)
+            if (n === 6) {
+                if (audio) {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+                if (audio1) {
+                    audio1.play().catch(e => console.log("Audio1 failed:", e));
+                }
+            }
+
+            if (n === 3) {
+                initMemoryGame();
+            } else {
+                clearInterval(shuffleInterval);
+                clearInterval(countdownInterval);
+            }
+
+            if (n === 5) {
+                resetNoButtonPosition();
+            }
+
+            if (n === 7) {
+                triggerFireworks();
+            }
+        }
+
+        // STAGE 1 DOB PASSWORD
+        const correctDOB = "15082004"; 
+
+        function checkStage1Password() {
+            const userInput = document.getElementById("passInput").value.replace(/[^0-9]/g, '');
+            const errMsg = document.getElementById("errMsg1");
+
+            if(userInput === correctDOB.replace(/[^0-9]/g, '')) {
+                errMsg.style.display = "none";
+                next(3);
+            } else {
+                errMsg.style.display = "block";
+                document.getElementById("passInput").value = "";
+            }
+        }
+
+        // STAGE 3 PASSWORD: Strictly "minecraft"
+        function checkMeetPassword() {
+            const userInput = document.getElementById("meetInput").value.trim().toLowerCase();
+            const errMsg = document.getElementById("errMsg2");
+
+            if(userInput === "minecraft") {
+                errMsg.style.display = "none";
+                next(5);
+            } else {
+                errMsg.style.display = "block";
+                document.getElementById("meetInput").value = "";
+            }
+        }
+
+        // --- STAGE 2: MEMORY CARD GAME LOGIC ---
+        let cardsData = [
+            { id: 1, icon: '👑', matched: false }, { id: 2, icon: '👑', matched: false },
+            { id: 3, icon: '🔥', matched: false }, { id: 4, icon: '🔥', matched: false },
+            { id: 5, icon: '⚡', matched: false }, { id: 6, icon: '⚡', matched: false },
+            { id: 7, icon: '🍕', matched: false }, { id: 8, icon: '🍕', matched: false }
+        ];
+
+        let flipped = [];
+        let shuffleInterval;
+        let countdownInterval;
+        let timeLeft = 5;
+        let isChecking = false;
+
+        function initMemoryGame() {
+            cardsData.forEach(c => c.matched = false);
+            flipped = [];
+            isChecking = false;
+            document.getElementById("nextMemoryGame").style.display = "none";
+            cardsData.sort(() => Math.random() - 0.5);
+            renderGrid();
+            startShuffleTimer();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById("gameGrid");
+            grid.innerHTML = "";
+
+            cardsData.forEach((item, index) => {
+                const card = document.createElement("div");
+                card.className = "card" + (item.matched ? " matched" : "");
+                
+                if(item.matched) {
+                    card.innerHTML = item.icon;
+                } else {
+                    const isFlipped = flipped.some(f => f.index === index);
+                    card.innerHTML = isFlipped ? item.icon : "❓";
+                }
+
+                card.onclick = () => flipCard(index, item);
+                grid.appendChild(card);
+            });
+        }
+
+        function shuffleUnmatched() {
+            if(cardsData.every(c => c.matched) || isChecking) return;
+            flipped = [];
+            let unmatched = cardsData.filter(c => !c.matched);
+            unmatched.sort(() => Math.random() - 0.5);
+
+            let unmatchedIndex = 0;
+            cardsData = cardsData.map(c => c.matched ? c : unmatched[unmatchedIndex++]);
+            renderGrid();
+        }
+
+        function startShuffleTimer() {
+            clearInterval(shuffleInterval);
+            clearInterval(countdownInterval);
+            timeLeft = 5;
+
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                if(timeLeft <= 0) timeLeft = 5;
+                document.getElementById("timerText").innerHTML = `⏳ Reshuffle in: ${timeLeft}s`;
+            }, 1000);
+
+            shuffleInterval = setInterval(() => {
+                shuffleUnmatched();
+            }, 5000);
+        }
+
+        function flipCard(index, item) {
+            if(item.matched || isChecking || flipped.length >= 2 || flipped.some(f => f.index === index)) return;
+
+            flipped.push({ index, item });
+            renderGrid();
+
+            if(flipped.length === 2) {
+                isChecking = true;
+                if(flipped[0].item.icon === flipped[1].item.icon) {
+                    flipped[0].item.matched = true;
+                    flipped[1].item.matched = true;
+                    flipped = [];
+                    isChecking = false;
+                    renderGrid();
+
+                    if(cardsData.every(c => c.matched)) {
+                        clearInterval(shuffleInterval);
+                        clearInterval(countdownInterval);
+                        document.getElementById("timerText").innerHTML = "🎉 GAME CLEARED!";
+                        document.getElementById("nextMemoryGame").style.display = "block";
+                    }
+                } else {
+                    setTimeout(() => {
+                        flipped = [];
+                        isChecking = false;
+                        renderGrid();
+                    }, 800);
+                }
+            }
+        }
+
+        // STAGE 4: QUESTIONS LOGIC
+        const questions = [
+            "😂 Kya tu officially mera Best Friend hai?",
+            "🍕 Kya tu mujhe lifetime treat dega?",
+            "💰 Kya tu mujhe ₹1 Crore udhaar dega?",
+            "🏍️ Kya apni bike mujhe dega?",
+            "🤝 Kya meri bakwaas hamesha sunega?",
+            "👶 Kya mere bachchon ka favourite chacha banega?",
+            "❤️ Kya Jiban ❤️ Sakcham forever?"
+        ];
+
+        let current = 0;
+        const yesBtn = document.getElementById("yesBtn");
+        const qTitle = document.getElementById("qTitle");
+        const qText = document.getElementById("qText");
+        const noBtn = document.getElementById("no");
+
+        yesBtn.onclick = function() {
+            current++;
+
+            if(current >= questions.length) {
+                qTitle.innerHTML = "🎉 Final Surprise!";
+                qText.innerHTML = "Chal ab photo dekh 😎";
+                this.innerHTML = "View Photo 📸";
+                noBtn.style.display = "none";
+
+                this.onclick = function() {
+                    next(6);
+                }
+                return;
+            }
+
+            qTitle.innerHTML = "Question " + (current + 1) + " 😂";
+            qText.innerHTML = questions[current];
+            resetNoButtonPosition();
+        }
+
+        function resetNoButtonPosition() {
+            noBtn.style.position = "relative";
+            noBtn.style.left = "0px";
+            noBtn.style.top = "0px";
+        }
+
+        // RUNAWAY "NO" BUTTON TELEPORT LOGIC
+        function moveNoButton(e) {
+            if(e) e.preventDefault();
+            
+            const padding = 20;
+            const maxX = window.innerWidth - noBtn.clientWidth - padding;
+            const maxY = window.innerHeight - noBtn.clientHeight - padding;
+            
+            const randomX = Math.max(padding, Math.floor(Math.random() * maxX));
+            const randomY = Math.max(padding, Math.floor(Math.random() * maxY));
+
+            noBtn.style.position = "fixed";
+            noBtn.style.left = randomX + "px";
+            noBtn.style.top = randomY + "px";
+        }
+
+        noBtn.addEventListener("mouseover", moveNoButton);
+        noBtn.addEventListener("touchstart", moveNoButton);
+        noBtn.addEventListener("click", moveNoButton);
+
+        // UNLIMITED FIREWORKS ANIMATION
+        function triggerFireworks() {
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 999 };
+
+            function randomInRange(min, max) {
+              return Math.random() * (max - min) + min;
+            }
+
+            setInterval(function() {
+              confetti(Object.assign({}, defaults, { particleCount: 30, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+              confetti(Object.assign({}, defaults, { particleCount: 30, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 350);
+        }
+    </script>
+</body>
+  </html>
+  
